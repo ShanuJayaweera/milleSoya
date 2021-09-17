@@ -1,0 +1,265 @@
+/* eslint-disable no-undef */
+/* eslint-disable react/jsx-wrap-multilines */
+/* eslint-disable no-alert */
+import React, { useState, useContext } from 'react';
+import PropTypes from 'prop-types';
+import clsx from 'clsx';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  TextField,
+  InputAdornment,
+  SvgIcon,
+  CircularProgress,
+  Switch,
+  FormLabel,
+  FormControl,
+  RadioGroup,
+  Radio,
+  Typography,
+  FormControlLabel,
+  makeStyles,
+  Grid
+} from '@material-ui/core';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import { Search as SearchIcon } from 'react-feather';
+
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+
+import { CreateNewApplication } from 'src/Helpers/API';
+import { useSnackbar } from 'notistack';
+import ApplicationContext from '../../Helpers/appContext';
+
+const useStyles = makeStyles((theme) => ({
+  root: {},
+  importButton: {
+    marginRight: theme.spacing(1)
+  },
+  exportButton: {
+    marginRight: theme.spacing(1)
+  }
+}));
+
+function rand() {
+  return Math.round(Math.random() * 20) - 10;
+}
+
+function getModalStyle() {
+  const top = 50 + rand();
+  const left = 50 + rand();
+
+  return {
+    top: `${top}%`,
+    left: `${left}%`,
+    transform: `translate(-${top}%, -${left}%)`
+  };
+}
+
+const Toolbar = ({ className, ...rest }) => {
+  const classes = useStyles();
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusState, setStatusState] = useState('active');
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [context, setContext] = useContext(ApplicationContext);
+
+  const initialValues = {
+    Name: '',
+    Description: '',
+    Status: statusState ? 1 : 0
+  };
+
+  const validationSchema = Yup.object().shape({
+    Name: Yup.string()
+      .max(100)
+      .required('Application Name is required.'),
+    Description: Yup.string()
+      .max(255)
+      .required('Description is required.')
+  });
+
+  const handleSnackBar = (message, variant) => {
+    enqueueSnackbar(`${message} `, { variant });
+  };
+
+  const handleStatus = (event) => {
+    setStatusState(event.target.value);
+  };
+
+  const handleIsLoading = () => {
+    setIsLoading((prev) => !prev);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const applicationResponse = (result) => {
+    handleSnackBar(result.success, 'success');
+    setContext(true);
+  };
+
+  const applicationReject = (result) => {
+    handleSnackBar(result, 'error');
+  };
+
+  const createApplicationRecord = (values) => {
+    handleIsLoading();
+    CreateNewApplication(values, applicationResponse, applicationReject)
+      .finally(() => { handleIsLoading(); handleClose(); });
+  };
+
+  return (
+    <div className={clsx(classes.root, className)} {...rest}>
+      <Box mt={3}>
+        <Card>
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={3}>
+                <Box maxWidth={500}>
+                  <TextField
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SvgIcon fontSize="small" color="action">
+                            <SearchIcon />
+                          </SvgIcon>
+                        </InputAdornment>
+                      )
+                    }}
+                    placeholder="Search Application"
+                    variant="outlined"
+                  />
+                </Box>
+              </Grid>
+              <Grid item xs={6} />
+              <Grid item xs={3}>
+                <Box display="flex" justifyContent="flex-end">
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={() => {
+                      setOpen(true);
+                    }}
+                  >
+                    Add New Application
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          disableBackdropClick
+          aria-labelledby="form-dialog-title"
+        >
+
+          <DialogTitle>
+            New Application
+          </DialogTitle>
+
+          <DialogContent>
+            <Formik
+              initialValues={initialValues}
+              validationSchema={validationSchema}
+              onSubmit={async (values) => {
+                if (statusState === 'active') {
+                  values.Status = 1;
+                }
+                if (statusState === 'inactive') {
+                  values.Status = 0;
+                }
+                createApplicationRecord(values);
+              }}
+            >
+              {({
+                errors,
+                handleBlur,
+                handleChange,
+                handleSubmit,
+                isSubmitting,
+                touched,
+                values
+              }) => (
+                <form onSubmit={handleSubmit}>
+                  <TextField
+                    error={Boolean(touched.Name && errors.Name)}
+                    helperText={touched.Name && errors.Name}
+                    margin="dense"
+                    id="Name"
+                    name="Name"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    label="Application Name"
+                    value={values.Name}
+                    type="text"
+                    fullWidth
+                  />
+                  <TextField
+                    error={Boolean(touched.Description && errors.Description)}
+                    helperText={touched.Description && errors.Description}
+                    margin="dense"
+                    id="Description"
+                    name="Description"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    label="Description"
+                    value={values.Description}
+                    type="text"
+                    fullWidth
+                    multiline
+                  />
+
+                  <RadioGroup aria-label="status" name="status" value={statusState} onChange={handleStatus}>
+                    <FormControlLabel value="active" control={<Radio />} label="Active" />
+                    <FormControlLabel value="inactive" control={<Radio />} label="InActive" />
+                  </RadioGroup>
+
+                  <DialogActions>
+
+                    <Button onClick={handleClose} color="primary">
+                      Cancel
+                    </Button>
+                    {
+                      isLoading
+                        ? (<CircularProgress />)
+                        : (
+                          <Button
+                            disabled={isSubmitting}
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                          >
+                            Create
+                          </Button>
+                        )
+                    }
+                  </DialogActions>
+                </form>
+              )}
+            </Formik>
+          </DialogContent>
+        </Dialog>
+
+      </Box>
+    </div>
+  );
+};
+
+Toolbar.propTypes = {
+  className: PropTypes.string,
+  testProp: PropTypes.any
+};
+
+export default Toolbar;

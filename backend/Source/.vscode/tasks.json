@@ -1,0 +1,29 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "presentation": {
+        "focus": true,
+        "panel": "shared"
+    },
+    "tasks": [
+        {
+            "label": "Create virtual environment & install packages!",
+            "type": "shell",
+            "problemMatcher": [],
+            "command": "python3 -m venv ~/Environments/LicenseManager --clear && source ~/Environments/LicenseManager/bin/activate && ~/Environments/LicenseManager/bin/pip install wheel && ~/Environments/LicenseManager/bin/pip install -r ${workspaceFolder}/requirements.txt"
+        },
+        {
+            "label": "Build and binarize!",
+            "type": "shell",
+            "problemMatcher": [],
+            "command": "source ~/Environments/LicenseManager/bin/activate && sudo rm -rf ${workspaceFolder}/build && ~/Environments/LicenseManager/bin/python3 setup.py build_ext"
+        },
+        {
+            "label": "Removes pycache folders (recursive)",
+            "type": "shell",
+            "problemMatcher": [],
+            "command": "rm -rf `find -type d -name __pycache__`"
+        }
+    ]
+}

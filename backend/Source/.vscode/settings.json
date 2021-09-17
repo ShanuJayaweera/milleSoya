@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "~/Environments/LicenseManager/bin/python3",
+    "window.title": "LicenseManager",
+    "python.linting.enabled": false
+}
